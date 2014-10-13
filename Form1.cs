@@ -34,16 +34,49 @@ namespace CSharpFileDisplaySample
     private AxInventorViewControlLib.AxInventorViewControl axInventorView1;
     private bool m_bmouseDown;
 
+    public void AddInventorPath()
+    {
+      // Note: System.Environment.Is64BitProcess and
+      // System.Environment.Is64BitProcess were
+      // introduced in .NET Framework 4.0
+      string path = System.Environment.GetEnvironmentVariable("PATH");
+
+      // In case process and OS bitness match it's
+      // C:\Program Files\Autodesk\Inventor 2015
+      // otherwise it's
+      // C:\Program Files\Autodesk\Inventor 2015\bin
+      string inventorPath = m_oserver.InstallPath;
+
+      if (System.Environment.Is64BitOperatingSystem &&
+          !System.Environment.Is64BitProcess)
+      {
+        // If you are running the app as a 32 bit process 
+        // on a 64 bit OS then you'll need this
+        path += ";" + inventorPath + "Bin32";
+      }
+      else
+      {
+        // Otherwise you need this
+        path += ";" + inventorPath + "Bin";
+      }
+
+      System.Environment.SetEnvironmentVariable("PATH", path);
+    }
+
     public Form1()
     {
       // Try to create an instance of apprentice server
       try
       {
         m_oserver = new ApprenticeServerComponent();
+        AddInventorPath();
       }
       catch (SystemException exception)
       {
-        MessageBox.Show(this, "Failed to create an instance of Apprentice server.", "CSharpFileDisplaySample", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        MessageBox.Show(this,
+          "Failed to create an instance of Apprentice server.",
+          "CSharpFileDisplaySample",
+          MessageBoxButtons.OK, MessageBoxIcon.Warning);
         return;
       }
 
@@ -153,36 +186,6 @@ namespace CSharpFileDisplaySample
     }
     #endregion
 
-
-    static string GetInventorPath()
-    {
-      string path = "";
-
-      Microsoft.Win32.RegistryKey key;
-      try
-      {
-        key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
-          "Software\\Autodesk\\Inventor\\Current Version");
-
-        path = (string)key.GetValue("Executable");
-        path = System.IO.Path.GetDirectoryName(path);
-      }
-      catch
-      {
-        try
-        {
-          key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
-            "Software\\Autodesk\\InventorView");
-
-          path = (string)key.GetValue("Location");
-          path = System.IO.Path.GetDirectoryName(path);
-        }
-        catch { }
-      }
-
-      return path;
-    }
-
     /// <summary>
     /// The main entry point for the application.
     /// </summary>
@@ -190,27 +193,6 @@ namespace CSharpFileDisplaySample
     [STAThread]
     static void Main()
     {
-      // Note: System.Environment.Is64BitProcess and
-      // System.Environment.Is64BitProcess were
-      // introduced in .NET Framework 4.0
-      string path = System.Environment.GetEnvironmentVariable("PATH");
-      string inventorPath = GetInventorPath();
-
-      if (System.Environment.Is64BitOperatingSystem &&
-         !System.Environment.Is64BitProcess)
-      {
-        // If you are running the app as a 32 bit process 
-        // on a 64 bit OS then you'll need this
-        path += ";" + inventorPath + "\\Bin32";
-      }
-      else
-      {
-        // Otherwise you need this
-        path += ";" + inventorPath;
-      }
-
-      System.Environment.SetEnvironmentVariable("PATH", path);
-
       System.Windows.Forms.Application.Run(new Form1());
     }
 
